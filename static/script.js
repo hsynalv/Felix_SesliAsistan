@@ -199,6 +199,34 @@ function closeResponse() {
     responseFrame.classList.remove('active');
 }
 
+
+function showInspiration() {
+    fetch('/get_reminder', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Request failed.');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            console.error('Error:', data.error);
+            alert('Reminder file not found');
+        } else {
+            console.log("Reminders:", data);
+            displayReminders(data); // Function to display the reminders
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
 function setCustomInstruction() {
     const responseFrame = document.getElementById('response-frame');
     const responseMessage = document.getElementById('response-message');
@@ -229,33 +257,6 @@ function setCustomInstruction() {
 
     // Show the response frame
     responseFrame.classList.add('active');
-}
-
-function showreminder() {
-    fetch('/get_reminder', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Request failed.');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.error) {
-            console.error('Error:', data.error);
-            alert('Reminder file not found');
-        } else {
-            console.log("Reminders:", data);
-            displayReminders(data); // Function to display the reminders
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
 }
 
 function displayReminders(reminders) {
@@ -289,6 +290,65 @@ function displayReminders(reminders) {
     // Show the response frame
     responseFrame.classList.add('active');
 }
+
+function fetchDataSet() {
+    fetch('/get_dataset', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Request failed.');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            console.error('Error:', data.error);
+            alert('DataSet file not found');
+        } else {
+            console.log("DataSet:", data);
+            displayDataSet(data); // Function to display the dataset
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function displayDataSet(data) {
+    const responseFrame = document.getElementById('response-frame');
+    const responseMessage = document.getElementById('response-message');
+
+    // Clear previous content
+    responseMessage.innerHTML = '';
+
+    // Create elements for each item in the dataset
+    data.forEach(item => {
+        const questionElement = document.createElement('div');
+        questionElement.classList.add('message', 'question');
+
+        const questionText = document.createElement('p');
+        questionText.innerText = item.Soru;
+        questionElement.appendChild(questionText);
+
+        const answerElement = document.createElement('div');
+        answerElement.classList.add('message', 'answer');
+
+        const answerText = document.createElement('p');
+        answerText.innerText = item.answer;
+        answerElement.appendChild(answerText);
+
+        responseMessage.appendChild(questionElement);
+        responseMessage.appendChild(answerElement);
+    });
+
+    // Show the response frame
+    responseFrame.classList.add('active');
+}
+
 
 function showResponse() {
     responseFrame.classList.add("active");

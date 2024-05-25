@@ -40,6 +40,17 @@ def get_reminder():
     else:
         return jsonify({"error": "Reminder file not found"}), 404
 
+
+@app.route('/get_dataset', methods=['GET'])
+def get_dataset():
+    reminder_file_path = 'DataSet.json'
+    if os.path.exists(reminder_file_path):
+        with open(reminder_file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        return jsonify(data)
+    else:
+        return jsonify({"error": "Reminder file not found"}), 404
+
 @app.route('/events')
 def events():
     def event_stream():

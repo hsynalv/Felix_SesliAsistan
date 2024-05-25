@@ -147,10 +147,9 @@
 .assistant-settings > li:hover > i { color: #5cf; }
 .assistant-settings > li:nth-child(1):hover ~ .hey-felix::after { content: "Özel Komutlar"; }
 .assistant-settings > li:nth-child(2):hover ~ .hey-felix::after { content: "Asistana Rol Ata"; }
-.assistant-settings > li:nth-child(3):hover ~ .hey-felix::after { content: "Hey Felix, what's today?"; }
-.assistant-settings > li:nth-child(4):hover ~ .hey-felix::after { content: "Hey Felix, tell me a joke."; }
-.assistant-settings > li:nth-child(5):hover ~ .hey-felix::after { content: "Hassasiyet Ayar (Küfürlü İçerik)"; }
-.assistant-settings > li:nth-child(6):hover ~ .hey-felix::after { content: "Hatırlatıcıları Göster"; }
+.assistant-settings > li:nth-child(3):hover ~ .hey-felix::after { content: "Geçmiş Konuşmalar"; }
+.assistant-settings > li:nth-child(4):hover ~ .hey-felix::after { content: "Hassasiyet Ayarları (Küfürlü İçerik)"; }
+.assistant-settings > li:nth-child(5):hover ~ .hey-felix::after { content: "Hatırlatıcıları Göster"; }
 
 /* Hey Felix */
 .hey-felix {
@@ -176,8 +175,8 @@
 	position: fixed;
 	top: 0;
 	left: 0;
-	width: 100%;
-	height: 100%;
+	width: 90%;
+	height: 90%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -185,10 +184,13 @@
 	background-color: #000c;
 	z-index: -1;
 	opacity: 0;
+	overflow-y: scroll; /* Dikey kaydırma */
 }
 .response-frame.active {
 	z-index: 1000;
 	opacity: 1;
+	margin-left: 5%;
+	margin-top: 2.5%;
 }
 .response-frame > .lead {
 	padding: 10px;
@@ -337,6 +339,31 @@ input:checked + .slider:before {
 
 .reminder p {
     margin: 5px 0;
+}
+
+#response-message {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+.message {
+    max-width: 70%;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 10px;
+    word-wrap: break-word;
+}
+
+.question {
+    align-self: flex-end;
+    background-color: #dcf8c6;
+}
+
+.answer {
+    align-self: flex-start;
+    background-color: #ffffff;
+    border: 1px solid #ececec;
 }
 
 /* Animations */
