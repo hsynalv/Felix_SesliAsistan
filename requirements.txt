@@ -1,0 +1,12 @@
+Flask==2.0.1
+requests==2.25.1
+google-cloud-speech==2.9.0
+google-cloud-texttospeech==2.5.0
+transformers==4.5.0
+speechrecognition==3.8.1
+opencv-python==4.5.2.52
+pygame==2.0.1
+tensorflow==2.4.1
+librosa==0.8.0
+matplotlib==3.4.1
+torch
