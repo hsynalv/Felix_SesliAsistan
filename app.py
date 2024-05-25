@@ -18,11 +18,12 @@ def index():
 @app.route('/activate_assistant', methods=['POST'])
 def activate_assistant():
     data = request.json
-    print(request.json)
     custom_instruction = data.get('custom_instruction')
-    assistant_thread = threading.Thread(target=assistant.run_assistant, args=(custom_instruction,))
+    safety_settings = data.get('safety_settings', [])
+    assistant_thread = threading.Thread(target=assistant.run_assistant, args=(custom_instruction, safety_settings))
     assistant_thread.start()
-    return jsonify({"message": "Assistant activated with custom instruction"})
+    return jsonify({"message": "Assistant activated with custom instruction and safety settings"})
+
 
 @app.route('/deactivate_felix', methods=['POST'])
 def deactivate_felix():
@@ -56,4 +57,4 @@ def notify_clients(message):
         client.put(message)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)

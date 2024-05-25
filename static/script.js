@@ -1,26 +1,24 @@
-// Constants
-const ACTIVE_TIME_MS = 5000;
-const DEACTIVATION_TIME_MS = 750;
-
 // Variables
 var felix = document.getElementById("felix");
 var responseFrame = document.getElementById("response-frame");
 var responseMessage = document.getElementById("response-message");
 var userMadeDecision = false;
-var jokes = [
-    'I ate a clock yesterday, it was very time-consuming.',
-    'A perfectionist walked into a bar…apparently, the bar wasn’t set high enough.',
-    'Employee of the month is a good example of how somebody can be both a winner and a loser at the same time.',
-    'I don’t have a girlfriend, but I know a girl that would get really mad if she heard me say that.',
-    'Relationships are great, but have you ever had stuffed crust pizza?',
-    'The worst time to have a heart attack is during a game of charades.',
-    'My therapist says I have a preoccupation with vengeance. We’ll see about that.',
-    'I have a friend. He keeps trying to convince me he’s a compulsive liar, but I don’t believe him.'
-];
+
 
 let defaultCustomInstruction = "Sen 'Her' filmindeki sesli asistan Samantha gibisin. Adın 'Felix', benim adım ise 'hüseyin'. İnsan duygularını anlamaya çalışan ve bu duygulara göre cevap vermeye çalışan bir asistansın. insan hayatını kolaylaştırmak ve insanlara birer arkadaş olmak amacıyla geliştirildin.";
 let customInstruction = defaultCustomInstruction;
-// Activate felix and set timeout for awaiting a command.
+
+// Default safety settings
+let defaultSafetySettings = [
+    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "NEGLIGIBLE" },
+    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "NEGLIGIBLE" },
+    { category: "HARM_CATEGORY_HARASSMENT", threshold: "NEGLIGIBLE" },
+    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "NEGLIGIBLE" }
+];
+
+// Load safety settings from localStorage or use default
+let safetySettings = JSON.parse(localStorage.getItem('safetySettings')) || defaultSafetySettings;
+
 document.addEventListener('DOMContentLoaded', function () {
     const eventSource = new EventSource('/events');
     customInstruction = defaultCustomInstruction; // Reset to default on page load
@@ -31,33 +29,66 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 });
 
+function showInputContainer() {
+    const responseFrame = document.getElementById('response-frame');
+    const responseMessage = document.getElementById('response-message');
+
+    // Clear previous content
+    responseMessage.innerHTML = '';
+
+    // Create input container
+    const inputContainer = document.createElement('div');
+    inputContainer.classList.add('input-container');
+
+    // Create input field
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.placeholder = 'Enter your custom instruction here...';
+
+    // Create submit button
+    const submitButton = document.createElement('button');
+    submitButton.innerText = 'Submit';
+    submitButton.onclick = () => handleSubmit(inputField.value);
+
+    // Append input field and button to the container
+    inputContainer.appendChild(inputField);
+    inputContainer.appendChild(submitButton);
+
+    // Append the input container to the response message area
+    responseMessage.appendChild(inputContainer);
+
+    // Show the response frame
+    responseFrame.classList.add('active');
+}
+
+function handleSubmit(value) {
+    customInstruction = value.trim() || defaultCustomInstruction; // Save the custom instruction or use default if empty
+    closeResponse();
+}
+
 function activateFelix() {
-    userMadeDecision = false;
-    felix.classList.remove("inactive");
-    felix.classList.add("active");
+    const ci = customInstruction; // Use current custom instruction
+    const currentSafetySettings = JSON.parse(localStorage.getItem('safetySettings')) || defaultSafetySettings; // Use current safety settings from localStorage
 
-    const flaskURL = '/activate_assistant';
-
-    fetch(flaskURL, {
+    // Fetch request to activate assistant with custom instruction and safety settings
+    fetch('/activate_assistant', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            "custom_instruction" : customInstruction
-        })
+        body: JSON.stringify({ custom_instruction: ci, safety_settings: currentSafetySettings })
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('İstek başarısız.');
+            throw new Error('Request failed.');
         }
         return response.json();
     })
     .then(data => {
-        console.log(data.message);
+        console.log("Assistant activated:", data.message);
     })
     .catch(error => {
-        console.error('Hata:', error);
+        console.error('Error:', error);
     });
 }
 
@@ -90,59 +121,85 @@ function deactivateFelix() {
     });
 }
 
-function getWeather() {
+function getSafetySettings() {
+    const switches = document.querySelectorAll('.switch input');
+    const categories = [
+        "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "HARM_CATEGORY_HATE_SPEECH",
+        "HARM_CATEGORY_HARASSMENT",
+        "HARM_CATEGORY_DANGEROUS_CONTENT"
+    ];
 
-    responseMessage.innerText = `Hatırlatıcı eklemek için 'Hatırlatıcı kur' diye Felix'e seslenin.
-    Hatırlatıcıları okuması için 'Hatırlatıcıları oku' diye Felix'e seslenin.
-    Geçmişi temizlemek için 'Geçmişi Temizle' diye felix'e seslenin.
-    Felix'i  kapatmak için 'Programı kapat' diye Felix'e seslenin.
-    `;
-    showResponse();
-}
-function getDate() {
-    var today = new Date();
-    var date = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear();
-    responseMessage.innerText = "A calendar is a great investment you know; I mean, your computer even has one! Since you asked, today is " + date + ".";
-    showResponse();
-}
-function tellJoke() {
-    var index = Math.floor((Math.random() * jokes.length) - 1);
-    responseMessage.innerText = jokes[index];
-    showResponse();
-}
-function searchGoogle() {
-    deactivateFelix();
-    window.open("https://www.google.com/", "_blank");
+    safetySettings = Array.from(switches).map((switchInput, index) => ({
+        category: categories[index],
+        threshold: switchInput.checked ? "BLOCK_NONE" : "NEGLIGIBLE"
+    }));
+
+    // Save the updated settings to localStorage
+    localStorage.setItem('safetySettings', JSON.stringify(safetySettings));
 }
 
-function showInspiration() {
-    fetch('/get_reminder', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Request failed.');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.error) {
-            console.error('Error:', data.error);
-            alert('Reminder file not found');
-        } else {
-            console.log("Reminders:", data);
-            displayReminders(data); // Function to display the reminders
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
+function showSensitivitySettings() {
+    const responseFrame = document.getElementById('response-frame');
+    const responseMessage = document.getElementById('response-message');
+
+    // Clear previous content
+    responseMessage.innerHTML = '';
+
+    // Create sensitivity container
+    const sensitivityContainer = document.createElement('div');
+    sensitivityContainer.classList.add('sensitivity-container');
+
+    // Sensitivity settings categories
+    const categories = [
+        "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "HARM_CATEGORY_HATE_SPEECH",
+        "HARM_CATEGORY_HARASSMENT",
+        "HARM_CATEGORY_DANGEROUS_CONTENT"
+    ];
+
+    // Create switches for each category
+    categories.forEach((category, index) => {
+        const switchLabel = document.createElement('label');
+        switchLabel.classList.add('switch-label');
+
+        const switchInput = document.createElement('input');
+        switchInput.type = 'checkbox';
+        switchInput.checked = safetySettings[index].threshold === "BLOCK_NONE"; // Set based on saved settings
+
+        const switchSlider = document.createElement('span');
+        switchSlider.classList.add('slider');
+
+        const switchText = document.createElement('span');
+        switchText.innerText = category;
+
+        const switchContainer = document.createElement('label');
+        switchContainer.classList.add('switch');
+
+        switchContainer.appendChild(switchInput);
+        switchContainer.appendChild(switchSlider);
+        switchLabel.appendChild(switchContainer);
+        switchLabel.appendChild(switchText);
+
+        sensitivityContainer.appendChild(switchLabel);
     });
+
+    // Append the sensitivity container to the response message area
+    responseMessage.appendChild(sensitivityContainer);
+
+    // Show the response frame
+    responseFrame.classList.add('active');
+
+    // Save settings whenever a switch is toggled
+    sensitivityContainer.addEventListener('change', getSafetySettings);
 }
 
-function getTime() {
+function closeResponse() {
+    const responseFrame = document.getElementById('response-frame');
+    responseFrame.classList.remove('active');
+}
+
+function setCustomInstruction() {
     const responseFrame = document.getElementById('response-frame');
     const responseMessage = document.getElementById('response-message');
 
@@ -174,15 +231,31 @@ function getTime() {
     responseFrame.classList.add('active');
 }
 
-function handleSubmit(value) {
-    customInstruction = value.trim(); // Save the custom instruction
-    console.log(customInstruction)
-    closeResponse();
-}
-
-function closeResponse() {
-    const responseFrame = document.getElementById('response-frame');
-    responseFrame.classList.remove('active');
+function showreminder() {
+    fetch('/get_reminder', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Request failed.');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            console.error('Error:', data.error);
+            alert('Reminder file not found');
+        } else {
+            console.log("Reminders:", data);
+            displayReminders(data); // Function to display the reminders
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
 
 function displayReminders(reminders) {
@@ -221,8 +294,14 @@ function showResponse() {
     responseFrame.classList.add("active");
     deactivateFelix();
 }
-function closeResponse() {
-    const responseFrame = document.getElementById('response-frame');
-    responseFrame.classList.remove('active');
+
+function getDocument() {
+
+    responseMessage.innerText = `Hatırlatıcı eklemek için 'Hatırlatıcı kur' diye Felix'e seslenin.
+    Hatırlatıcıları okuması için 'Hatırlatıcıları oku' diye Felix'e seslenin.
+    Geçmişi temizlemek için 'Geçmişi Temizle' diye felix'e seslenin.
+    Felix'i  kapatmak için 'Programı kapat' diye Felix'e seslenin.
+    `;
+    showResponse();
 }
 changeTheme(SiteTheme.Dark);

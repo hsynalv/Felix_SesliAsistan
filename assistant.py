@@ -45,7 +45,7 @@ reminder_filePath = "reminder.json"
 stt_credentials_file = "credentials/stt_credentials.json"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="tts_credentials.json"
 
-safety_settings = [
+safety_settings_default = [
   {
     "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
     "threshold": "BLOCK_NONE"
@@ -95,7 +95,7 @@ def recognize_speech(audio, credentials_json):
         print("Kullanıcı: " + text)
     except sr.UnknownValueError:
         play_pyGame("C:/Users/alavh/Desktop/Bitirme Projesi/Proje/common_voices/sesinizi_anlayamadim.mp3")
-        run_assistant()
+        run_assistant(Custom_Instruction,safety_settings_default)
         text = None
     except sr.RequestError as e:
         print(f"Google Cloud Speech-to-Text hizmetine erişilemedi: {e}")
@@ -245,7 +245,7 @@ def add_reminder():
     play_pyGame("common_voices/ne_hatirlatayim.mp3")
     bilgi_girdisi = main_speech_recognition_flow(stt_credentials_file)
     prompt = create_prompt(Custom_Instruction_for_reminder, tarih_saat_girdisi, "", None, None)
-    response = model.generate_content(prompt, safety_settings=safety_settings)
+    response = model.generate_content(prompt, safety_settings=safety_settings_default)
     print(response.text)
     hatirlatici = {
         "tarih_saat": response.text,
@@ -298,11 +298,10 @@ def predict_emotion(wav_path, model):
     emotions = ['angry', 'sad', 'calm', 'happy']
     return emotions[predicted_class[0]]
 
-
-def run_assistant(ci):
+def run_assistant(ci, safety_settings):
+    print(ci)
     quit = True
     while quit:
-
         activate_felix()
         Soru = main_speech_recognition_flow(stt_credentials_file)
 
@@ -315,7 +314,7 @@ def run_assistant(ci):
         # API'ye gönderilecek bilgiyi ekrana bas
         if "baksana" in Soru.lower():
             caption = cam()
-            prompt = create_prompt(Custom_Instruction_for_cam, None, None, caption, None)
+            prompt = create_prompt(ci, None, None, caption, None)
         elif "geçmişi temizle" in Soru.lower():
             clear_json_(history_filePath)
             play_pyGame("C:/Users/alavh/Desktop/Bitirme Projesi/Proje/common_voices/gecmis_temizleme.mp3")
@@ -330,18 +329,15 @@ def run_assistant(ci):
             continue
         elif "hatırlatıcıları oku" in Soru.lower():
             prompt = create_prompt(Custom_Instruction_for_reminder_read, "", "", None, None)
-            print(prompt)
         else:
             prompt = create_prompt(ci, Soru, history, None, emotion)
 
         print(prompt)
-
-        # API'den cevap al
-        response = model.generate_content(prompt, safety_settings=safety_settings)
-        print(clear_newLine(response.text))
-
+        response = model.generate_content(prompt, safety_settings=safety_settings_default)
+        print(response.text)
         # Geçmişe kaydet
         write_json(Soru=Soru, answer=response.text, filePath=history_filePath)
+
 
         try:
             if emotion == "sad":
@@ -349,7 +345,10 @@ def run_assistant(ci):
             else:
                 synthesize_speech_form_elevenlabs_neural(clear_newLine(response.text))
         except:
-            synthesize_speech_from_google(clear_newLine(response.text))
+                synthesize_speech_from_google(clear_newLine(response.text))
 
+
+        # Sentezlenen cümleyi söylemeden önce deaktive et
         deactivate_felix()
         play_pyGame()
+
